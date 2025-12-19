@@ -21,7 +21,7 @@ export default function Home() {
       {showAgentCard && (
         <div style={{
           position: 'absolute',
-          top: '120px',
+          top: '60px',
           left: '340px',
           zIndex: 10,
           pointerEvents: 'none'
