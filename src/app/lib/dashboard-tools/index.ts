@@ -29,34 +29,9 @@ export const getDashboardGenerationTools = (
         })
   ) => ({
     type: "function" as const,
-    function: {
-      name,
-      description,
-      parameters: zodToJsonSchema(schema),
-      function: async (args: string) => {
-        try {
-          const parsedArgs = JSON.parse(args);
-          const state =
-            typeof thinkingState === "function"
-              ? thinkingState(parsedArgs)
-              : thinkingState;
-          if (JSON.stringify(state) !== JSON.stringify(lastThinkingState)) {
-            writeThinkingState(state);
-            lastThinkingState = state;
-          }
-
-          const result = await fn(parsedArgs);
-          return JSON.stringify(result);
-        } catch (error) {
-          console.error(`error calling tool ${name}: `, error);
-          return JSON.stringify({
-            success: false,
-            error: `Error calling tool ${name}`,
-            details: error instanceof Error ? error.message : 'Unknown error'
-          });
-        }
-      },
-    },
+    name,
+    description,
+    parameters: zodToJsonSchema(schema),
   });
 
   return [
@@ -65,7 +40,7 @@ export const getDashboardGenerationTools = (
       "Analyzes webhook JSON to detect field types, data patterns, and relationships",
       analyzeWebhookPayloadSchema,
       analyzeWebhookPayload,
-      (args) => ({
+      (_args) => ({
         title: "Analyzing webhook data...",
         description: "Detecting field types and data structure"
       })

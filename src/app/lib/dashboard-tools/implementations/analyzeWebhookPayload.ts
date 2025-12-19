@@ -11,7 +11,7 @@ export async function analyzeWebhookPayload(args: Args) {
     const fields = Object.entries(payload).map(([name, value]) => ({
       name,
       type: detectType(value),
-      format: detectFormat(name, value)
+      format: detectFormat(name)
     }));
     
     return {
@@ -20,23 +20,23 @@ export async function analyzeWebhookPayload(args: Args) {
       confidence: calculateConfidence(fields),
       platformHint: args.platformType || detectPlatform(fields)
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       error: "Unable to parse webhook JSON",
-      details: error.message
+      details: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
 
-function detectType(value: any): string {
+function detectType(value: unknown): string {
   if (value === null) return 'unknown';
   if (Array.isArray(value)) return 'array';
   if (value instanceof Date || /^\d{4}-\d{2}-\d{2}/.test(String(value))) return 'date';
   return typeof value;
 }
 
-function detectFormat(name: string, value: any): string | undefined {
+function detectFormat(name: string): string | undefined {
   const lowerName = name.toLowerCase();
   if (lowerName.includes('time') || lowerName.includes('date')) return 'datetime';
   if (lowerName.includes('email')) return 'email';
@@ -44,7 +44,7 @@ function detectFormat(name: string, value: any): string | undefined {
   return undefined;
 }
 
-function calculateConfidence(fields: any[]): number {
+function calculateConfidence(fields: { type: string }[]): number {
   // High confidence if has timestamp + 3+ other fields
   const hasTimestamp = fields.some(f => f.type === 'date');
   const fieldCount = fields.length;
@@ -55,7 +55,7 @@ function calculateConfidence(fields: any[]): number {
   return 0.60;
 }
 
-function detectPlatform(fields: any[]): string {
+function detectPlatform(fields: { name: string }[]): string {
   const fieldNames = fields.map(f => f.name.toLowerCase()).join(',');
   if (fieldNames.includes('call') || fieldNames.includes('vapi')) return 'vapi';
   if (fieldNames.includes('retell')) return 'retell';

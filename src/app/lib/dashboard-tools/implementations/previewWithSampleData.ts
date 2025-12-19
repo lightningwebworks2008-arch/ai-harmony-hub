@@ -32,11 +32,11 @@ export async function previewWithSampleData(args: Args) {
         fieldsValidated: Object.keys(sampleData).length
       }
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       error: "Preview validation failed",
-      details: error.message
+      details: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
