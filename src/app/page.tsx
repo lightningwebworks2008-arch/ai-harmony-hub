@@ -11,30 +11,26 @@ export default function Home() {
   const handleSelectAgent = (agent: string) => {
     console.log('Selected agent:', agent);
     setShowAgentCard(false);
-    // TODO: Pass agent selection to chat
+    // TODO: Send to chat API
   };
 
   return (
-    <>
+    <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <C1Chat apiUrl="/api/chat" theme={{ mode: "dark" }} />
       
       {showAgentCard && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(15, 20, 25, 0.95)',
-          zIndex: 1000,
-          padding: '20px'
+          position: 'absolute',
+          top: '60px',
+          left: '340px',
+          zIndex: 10,
+          pointerEvents: 'none'
         }}>
-          <AgentSelectionCard onSelectAgent={handleSelectAgent} />
+          <div style={{ pointerEvents: 'all' }}>
+            <AgentSelectionCard onSelectAgent={handleSelectAgent} />
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
