@@ -13,7 +13,7 @@ export async function generateDashboardSpecification(args: Args) {
     const spec = {
       templateId: bestTemplate.id,
       templateName: bestTemplate.name,
-      widgets: generateWidgets(args.schema, bestTemplate),
+      widgets: generateWidgets(args.schema),
       layout: generateLayout(),
       theme: args.customizations?.colors || getDefaultTheme()
     };
@@ -24,16 +24,16 @@ export async function generateDashboardSpecification(args: Args) {
       matchedTemplate: bestTemplate.name,
       confidence: 0.90 // Deterministic matching is highly confident
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       error: "Failed to generate dashboard specification",
-      details: error.message
+      details: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
 
-function generateWidgets(schema: any, template: any) {
+function generateWidgets(schema: { fields: Array<{ name: string; type: string }> }) {
   const widgets = [];
   
   // Always add KPI card for event count
@@ -45,7 +45,7 @@ function generateWidgets(schema: any, template: any) {
   });
   
   // Add line chart if has timestamp
-  const timestampField = schema.fields.find((f: any) => f.type === 'date');
+  const timestampField = schema.fields.find((f: { name: string; type: string }) => f.type === 'date');
   if (timestampField) {
     widgets.push({
       type: 'line',
@@ -56,7 +56,7 @@ function generateWidgets(schema: any, template: any) {
   }
   
   // Add pie chart if has status
-  const statusField = schema.fields.find((f: any) => 
+  const statusField = schema.fields.find((f: { name: string; type: string }) => 
     f.name.toLowerCase().includes('status')
   );
   if (statusField) {
@@ -71,7 +71,7 @@ function generateWidgets(schema: any, template: any) {
   widgets.push({
     type: 'table',
     title: 'Recent Events',
-    fields: schema.fields.map((f: any) => f.name)
+    fields: schema.fields.map((f: { name: string }) => f.name)
   });
   
   return widgets;
