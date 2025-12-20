@@ -38,90 +38,67 @@ export async function POST(
     if (apiKey && apiKey !== '') {
       const client = new OpenAI({
         baseURL: "https://api.thesys.dev/v1/embed/",
-        apiKey: apiKey,
+        apiKey,
       });
 
+      // Capture intermediate thinking states into an array (for logging/debugging only)
       const progressMessages: string[] = [];
-      const writeThinkingState = async (state: { title: string; description: string }) => {
+      const writeThinkingState = (state: { title: string; description: string }) => {
         progressMessages.push(`${state.title}: ${state.description}`);
       };
 
       const tools = getDashboardGenerationTools(writeThinkingState);
 
-      const llmStream = await client.chat.completions.create({
+      // Run tools via the OpenAI helper. This automatically invokes any tools
+      // called by the model and emits events as content/messages.
+      const runToolsResponse = client.beta.chat.completions.runTools({
         model: "c1/openai/gpt-4o/v-20241120",
         messages: [
-          {
-            role: "system",
-            content: getSystemPrompt()
-          },
+          { role: "system", content: getSystemPrompt() },
           {
             role: "user",
-            content: `Analyze this webhook data and generate a dashboard specification:\n\n${JSON.stringify(webhookData)}`
-          }
+            content: `Analyze this webhook data and generate a dashboard specification:\n\n${JSON.stringify(webhookData)}`,
+          },
         ],
-        tools: tools.map(tool => ({
-          type: "function" as const,
-          function: {
-            name: tool.function.name,
-            description: tool.function.description,
-            parameters: tool.function.parameters,
-          }
-        })),
-        tool_choice: "auto",
+        tools,
         stream: true,
       });
 
-      // Process AI response and execute tools
-      for await (const chunk of llmStream) {
-        const toolCalls = chunk.choices[0]?.delta?.tool_calls;
-        
-        if (toolCalls) {
-          for (const toolCall of toolCalls) {
-            if (toolCall.function?.name && toolCall.function?.arguments) {
-              const toolName = toolCall.function.name;
-              const tool = tools.find(t => t.function.name === toolName);
-              if (tool) {
-                const args = JSON.parse(toolCall.function.arguments);
-                await tool.function.execute(args);
-              }
+      // Save the generated specification exactly once
+      let specSaved = false;
+      runToolsResponse.on("message", async (message) => {
+        // Tool result messages have role 'tool' and include the tool name and JSON content
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const msg: any = message;
+        if (
+          !specSaved &&
+          msg.role === "tool" &&
+          msg.name === "generate_dashboard_specification" &&
+          typeof msg.content === "string"
+        ) {
+          try {
+            const result = JSON.parse(msg.content);
+            if (result && result.specification) {
+              const specToSave = {
+                ...result.specification,
+                sampleData: webhookData,
+                createdAt: Date.now(),
+              };
+              await saveSpec(clientId, specToSave);
+              specSaved = true;
+              console.log(`[Webhook] Dashboard generated and saved for client ${clientId}`);
             }
+          } catch (err) {
+            console.error("Failed to parse tool result", err);
           }
         }
-      }
+      });
 
-      // Save generated spec with clientId as preview ID
-      const mockSpec = {
-        templateId: "webhook-dashboard",
-        templateName: "Webhook Dashboard",
-        structure: {
-          sections: [
-            {
-              type: "kpi-grid",
-              widgets: [
-                {
-                  type: "stat-card",
-                  label: "Total Events",
-                  dataPath: "metrics.totalEvents",
-                  icon: "activity",
-                  format: "number"
-                }
-              ]
-            }
-          ]
-        },
-        fieldMappings: {},
-        theme: {
-          primary: "#4F46E5",
-          secondary: "#7C3AED"
-        },
-        sampleData: webhookData,
-        createdAt: Date.now()
-      };
-
-      await saveSpec(clientId, mockSpec);
-
-      console.log(`[Webhook] Dashboard generated for client ${clientId}`);
+      // Wait for completion
+      await new Promise<void>((resolve, reject) => {
+        runToolsResponse.on("end", () => resolve());
+        runToolsResponse.on("error", (err) => reject(err));
+      });
     }
 
     return NextResponse.json({ 
