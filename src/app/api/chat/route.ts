@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
     
     if (urlMatch) {
       const webhookUrl = urlMatch[0];
-      const clientId = urlMatch[1];
       
       const responseMessage = `I've created your webhook URL:
 
