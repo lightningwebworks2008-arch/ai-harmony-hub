@@ -13,22 +13,27 @@ export default function Home() {
     setShowAgentCard(false);
     
     if (agent === 'webhook') {
-      // Generate unique client ID
       const clientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       const webhookUrl = `https://getflowetic.com/api/webhooks/${clientId}`;
       
-      // Send system message to chat with webhook URL
-      const chatInput = document.querySelector('textarea[placeholder*="message"]') as HTMLTextAreaElement;
-      if (chatInput) {
-        const message = `WEBHOOK_URL_GENERATED:${webhookUrl}:${clientId}`;
-        chatInput.value = message;
-        
-        // Trigger submit
-        const form = chatInput.closest('form');
-        if (form) {
-          form.requestSubmit();
+      setTimeout(() => {
+        const chatInput = document.querySelector('textarea') as HTMLTextAreaElement;
+        if (chatInput) {
+          chatInput.focus();
+          chatInput.value = `WEBHOOK_URL_GENERATED:${webhookUrl}:${clientId}`;
+          
+          const inputEvent = new Event('input', { bubbles: true });
+          chatInput.dispatchEvent(inputEvent);
+          
+          setTimeout(() => {
+            const form = chatInput.closest('form');
+            if (form) {
+              const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+              form.dispatchEvent(submitEvent);
+            }
+          }, 100);
         }
-      }
+      }, 300);
     }
   };
 
