@@ -52,7 +52,7 @@ export async function POST(
       // Run tools via the OpenAI helper. This automatically invokes any tools
       // called by the model and emits events as content/messages.
       const runToolsResponse = client.beta.chat.completions.runTools({
-        model: "c1/openai/gpt-4o/v-20241120",
+        model: "c1-exp/openai/gpt-4.1/v-20250709",
         messages: [
           { role: "system", content: getSystemPrompt() },
           {
@@ -62,6 +62,10 @@ export async function POST(
         ],
         tools,
         stream: true,
+      });
+
+      runToolsResponse.on("error", (err) => {
+        console.error("[Webhook] runTools error:", err);
       });
 
       // Save the generated specification exactly once

@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   // Call runTools: this will handle tool calls automatically
   const runToolsResponse = client.beta.chat.completions.runTools({
-    model: "c1/openai/gpt-4o/v-20241120",
+    model: "c1-exp/openai/gpt-4.1/v-20250709",
     messages: [
       { role: "system", content: systemPrompt },
       ...conversationHistory,
