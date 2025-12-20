@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { C1Chat } from "@thesysai/genui-sdk";
 import { AgentSelectionCard } from './components/AgentSelectionCard';
 import "@crayonai/react-ui/styles/index.css";
 
 export default function Home() {
   const [showAgentCard, setShowAgentCard] = useState(true);
+  const router = useRouter();
 
   const handleSelectAgent = (agent: string) => {
     console.log('Selected agent:', agent);
     setShowAgentCard(false);
-    // TODO: Send to chat API
+    router.push(`/dashboard/generate?agent=${encodeURIComponent(agent)}`);
   };
 
   return (
