@@ -86,6 +86,9 @@ I'm now listening for webhook data. Once you send a test event, I'll automatical
   // Get conversation history
   const conversationHistory = await messageStore.getOpenAICompatibleMessageList();
 
+  // Save user message before processing
+  await messageStore.addMessage(prompt);
+
   // Normal AI chat with custom system prompt and tools
   const llmStream = await client.chat.completions.create({
     model: "c1/openai/gpt-5/v-20251130",
@@ -108,96 +111,8 @@ I'm now listening for webhook data. Once you send a test event, I'll automatical
     stream: true,
   });
 
-  // Handle tool calls from AI
-  let toolResults: any[] = [];
-  
-  for await (const chunk of llmStream) {
-    const toolCalls = chunk.choices[0]?.delta?.tool_calls;
-    
-    if (toolCalls) {
-      for (const toolCall of toolCalls) {
-        if (toolCall.function?.name && toolCall.function?.arguments) {
-          const toolName = toolCall.function.name;
-          const tool = tools.find(t => t.function.name === toolName);
-          
-          if (tool) {
-            try {
-              const args = JSON.parse(toolCall.function.arguments);
-              const result = await tool.function.execute(args);
-              toolResults.push({ tool: toolName, result });
-              console.log(`[Tool Success] ${toolName}:`, result);
-            } catch (error) {
-              console.error(`[Tool Error] ${toolName}:`, error);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // If tools were executed, make another LLM call with results
-  if (toolResults.length > 0) {
-    const finalLlmStream = await client.chat.completions.create({
-      model: "c1/openai/gpt-5/v-20251130",
-      messages: [
-        {
-          role: "system",
-          content: getSystemPrompt()
-        },
-        ...conversationHistory,
-        {
-          role: "assistant",
-          content: `I've analyzed the data using my tools. Here are the results: ${JSON.stringify(toolResults)}`
-        }
-      ],
-      stream: true,
-    });
-
-    const finalResponseStream = transformStream(
-      finalLlmStream,
-      (chunk) => {
-        return chunk.choices?.[0]?.delta?.content ?? "";
-      },
-      {
-        onEnd: async ({ accumulated }) => {
-          const message = accumulated.filter((message) => message).join("");
-          await messageStore.addMessage({
-            role: "assistant",
-            content: message,
-            id: responseId,
-          });
-        },
-      }
-    ) as ReadableStream<string>;
-
-    return new NextResponse(finalResponseStream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-      },
-    });
-  }
-
-  // Save user message before processing
-  await messageStore.addMessage(prompt);
-
-  // Re-create stream for normal response (since we consumed it)
-  const normalStream = await client.chat.completions.create({
-    model: "c1/openai/gpt-5/v-20251130",
-    messages: [
-      {
-        role: "system",
-        content: getSystemPrompt()
-      },
-      ...conversationHistory
-    ],
-    stream: true,
-  });
-
-  // Continue with normal response stream
   const responseStream = transformStream(
-    normalStream,
+    llmStream,
     (chunk) => {
       return chunk.choices?.[0]?.delta?.content ?? "";
     },
