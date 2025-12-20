@@ -22,22 +22,27 @@ export const getDashboardGenerationTools = (
     thinkingState:
       | { title: string; description: string }
       | ((args: z.infer<z.ZodObject<T>>) => {
-          title: string;
-          description: string;
-        })
+        title: string;
+        description: string;
+      })
   ) => ({
     type: "function" as const,
     function: {
       name,
       description,
       parameters: zodToJsonSchema(schema),
-      execute: async (args: z.infer<z.ZodObject<T>>) => {
-        const state = typeof thinkingState === 'function' 
-          ? thinkingState(args) 
-          : thinkingState;
+      // runTools expects a function that takes a JSON string and returns a string
+      function: async (argsString: string) => {
+        const parsedArgs = JSON.parse(argsString);
+        const state =
+          typeof thinkingState === "function"
+            ? thinkingState(parsedArgs)
+            : thinkingState;
         writeThinkingState(state);
-        return await fn(args);
-      }
+        const result = await fn(parsedArgs);
+        // Always return a string; runTools expects stringified JSON
+        return JSON.stringify(result);
+      },
     },
   });
 

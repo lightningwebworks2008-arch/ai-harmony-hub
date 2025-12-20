@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import OpenAI from "openai";
-import { transformStream } from "@crayonai/stream";
-import { DBMessage, getMessageStore } from "./messageStore";
+import { makeC1Response } from "@thesysai/genui-sdk/server";
 import { getDashboardGenerationTools } from "@/app/lib/dashboard-tools";
 import { getSystemPrompt } from "@/app/config/system-prompts";
+import { DBMessage, getMessageStore } from "./messageStore";
 
 export async function POST(req: NextRequest) {
   const { prompt, threadId, responseId } = (await req.json()) as {
@@ -16,118 +16,72 @@ export async function POST(req: NextRequest) {
     baseURL: "https://api.thesys.dev/v1/embed/",
     apiKey: process.env.THESYS_API_KEY,
   });
-  
+
   const messageStore = getMessageStore(threadId);
 
-  // Check if user is requesting webhook setup
-  if (typeof prompt.content === 'string' && 
-      (prompt.content.toLowerCase().includes('webhook') || 
-       prompt.content.toLowerCase().includes('client id'))) {
-    
-    // Extract webhook URL and client ID if present
-    const urlMatch = prompt.content.match(/https:\/\/getflowetic\.com\/api\/webhooks\/([a-zA-Z0-9_-]+)/);
-    
-    if (urlMatch) {
-      const webhookUrl = urlMatch[0];
-      
-      const responseMessage = `I've created your webhook URL:
+  // Decide which system prompt to use based on user message
+  const isWebhookRequest =
+    typeof prompt.content === "string" &&
+    /webhook|client id|dashboard|generate/i.test(prompt.content);
 
-**${webhookUrl}**
+  const systemPrompt = isWebhookRequest
+    ? getSystemPrompt() // dashboard-specific prompt
+    : "You are a helpful AI assistant. Provide clear, concise, and accurate responses."; // generic chat prompt
 
-📋 **Setup Instructions:**
-
-1. **Copy the URL above**
-2. **Add it to your platform:**
-   - Vapi: Dashboard → Server URL → Paste URL
-   - Retell: Settings → Webhook URL → Paste URL
-   - n8n: Webhook node → Production URL → Deploy
-   - Make: Webhooks → Custom Webhook → Paste URL
-
-3. **Send a test event**
-
-I'm now listening for webhook data. Once you send a test event, I'll automatically:
-- Detect your data structure
-- Match it to the best dashboard template
-- Generate a preview for you
-
-⏳ **Status:** Waiting for first webhook event...`;
-
-      await messageStore.addMessage(prompt);
-      await messageStore.addMessage({
-        role: "assistant",
-        content: responseMessage,
-        id: responseId,
-      });
-
-      const stream = new ReadableStream({
-        start(controller) {
-          const encoder = new TextEncoder();
-          controller.enqueue(encoder.encode(responseMessage));
-          controller.close();
-        }
-      });
-
-      return new NextResponse(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache, no-transform",
-          Connection: "keep-alive",
-        },
-      });
-    }
-  }
-
-  // Initialize dashboard generation tools
-  const tools = getDashboardGenerationTools(async (state) => {
-    console.log('[Tool Execution]', state);
+  // Create C1 response to stream content and "thinking" states
+  const c1Response = makeC1Response();
+  c1Response.writeThinkItem({
+    title: "Processing your request",
+    description: "Analyzing your message...",
   });
 
-  // Get conversation history
-  const conversationHistory = await messageStore.getOpenAICompatibleMessageList();
+  // Build tool definitions
+  const tools = getDashboardGenerationTools(c1Response.writeThinkItem);
 
-  // Save user message before processing
+  // Pull existing thread messages and save the new user message
+  const conversationHistory = await messageStore.getOpenAICompatibleMessageList();
   await messageStore.addMessage(prompt);
 
-  // Normal AI chat with custom system prompt and tools
-  const llmStream = await client.chat.completions.create({
-    model: "c1/openai/gpt-5/v-20251130",
+  // Call runTools: this will handle tool calls automatically
+  const runToolsResponse = client.beta.chat.completions.runTools({
+    model: "c1/openai/gpt-4o/v-20241120",
     messages: [
-      {
-        role: "system",
-        content: getSystemPrompt()
-      },
-      ...conversationHistory
+      { role: "system", content: systemPrompt },
+      ...conversationHistory,
     ],
-    tools: tools.map(tool => ({
-      type: "function" as const,
-      function: {
-        name: tool.function.name,
-        description: tool.function.description,
-        parameters: tool.function.parameters,
-      }
-    })),
-    tool_choice: "auto",
+    tools: tools,
     stream: true,
   });
 
-  const responseStream = transformStream(
-    llmStream,
-    (chunk) => {
-      return chunk.choices?.[0]?.delta?.content ?? "";
-    },
-    {
-      onEnd: async ({ accumulated }) => {
-        const message = accumulated.filter((message) => message).join("");
-        await messageStore.addMessage({
-          role: "assistant",
-          content: message,
-          id: responseId,
-        });
-      },
-    }
-  ) as ReadableStream<string>;
+  // Collect messages returned by runTools for persistence
+  const messagesToSave: any[] = [];
 
-  return new NextResponse(responseStream, {
+  runToolsResponse.on("content", (chunk) => {
+    c1Response.writeContent(chunk);
+  });
+
+  runToolsResponse.on("message", (message) => {
+    // Each message may include 'tool_calls' or be a normal assistant reply
+    messagesToSave.push(message);
+  });
+
+  runToolsResponse.on("error", (error) => {
+    console.error("[Chat API Error]", error);
+    c1Response.end();
+  });
+
+  runToolsResponse.on("end", async () => {
+    c1Response.end();
+    // Persist assistant + tool messages to Supabase
+    for (const msg of messagesToSave) {
+      await messageStore.addMessage({
+        ...msg,
+        id: msg.id || crypto.randomUUID(),
+      });
+    }
+  });
+
+  return new Response(c1Response.responseStream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
