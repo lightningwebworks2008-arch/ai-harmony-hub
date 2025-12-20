@@ -18,12 +18,11 @@ export async function POST(req: NextRequest) {
   const messageStore = getMessageStore(threadId);
 
   // Check if this is a webhook URL generation message
-  if (prompt.content.startsWith('WEBHOOK_URL_GENERATED:')) {
+  if (prompt.content && prompt.content.startsWith('WEBHOOK_URL_GENERATED:')) {
     const parts = prompt.content.split(':');
     const webhookUrl = parts[1];
     const clientId = parts[2];
 
-    // Create friendly response message
     const responseMessage = `I've created a webhook URL for you:
 
 **${webhookUrl}**
@@ -45,20 +44,19 @@ export async function POST(req: NextRequest) {
 
 You can check webhook status here: ${webhookUrl.replace('/api/webhooks/', '/api/webhooks-status/')}`;
 
-    messageStore.addMessage(prompt);
-    messageStore.addMessage({
-      role: "assistant",
-      content: responseMessage,
-      id: responseId,
-    });
+  messageStore.addMessage(prompt);
+  messageStore.addMessage({
+    role: "assistant",
+    content: responseMessage,
+    id: responseId,
+  });
 
-    // Return as regular response (not streaming)
-    return NextResponse.json({
-      message: responseMessage,
-      webhookUrl,
-      clientId
-    });
-  }
+  return NextResponse.json({
+    message: responseMessage,
+    webhookUrl,
+    clientId
+  });
+}
 
   // Normal chat flow
   messageStore.addMessage(prompt);
