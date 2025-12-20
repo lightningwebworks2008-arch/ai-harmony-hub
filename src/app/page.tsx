@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { C1Chat } from "@thesysai/genui-sdk";
 import { AgentSelectionCard } from './components/AgentSelectionCard';
+
+
 import "@crayonai/react-ui/styles/index.css";
 
 export default function Home() {
@@ -22,24 +24,8 @@ export default function Home() {
           setWebhookStatus('connected');
           clearInterval(pollInterval);
           
-          // Send success notification to chat
-          fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: {
-                role: 'user',
-                content: 'Webhook connected successfully',
-                id: `msg_success_${Date.now()}`
-              },
-              threadId: 'main-thread',
-              responseId: `resp_success_${Date.now()}`,
-              webhookSuccess: {
-                previewUrl: data.previewUrl,
-                templateName: data.templateName
-              }
-            })
-          }).catch(err => console.error('Failed to send success message:', err));
+          // Notify user via alert (since we can't inject into C1Chat directly)
+          alert(`✅ Webhook Connected!\n\nDashboard ready: ${data.previewUrl}\n\nTemplate: ${data.templateName || 'Auto-detected'}`);
         }
       } catch (error) {
         console.error('Polling error:', error);
@@ -60,30 +46,29 @@ export default function Home() {
       setWebhookClientId(clientId);
       setWebhookStatus('waiting');
       
-      // Send message to chat API to trigger AI response
-      fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: {
-            role: 'user',
-            content: 'I want to set up a webhook connection for my dashboard.',
-            id: `msg_${Date.now()}`
-          },
-          threadId: 'main-thread',
-          responseId: `resp_${Date.now()}`,
-          webhookData: {
-            clientId,
-            webhookUrl
+      // Trigger webhook setup via prompt
+      const textarea = document.querySelector('textarea[placeholder*="message"]') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.value = `Create a webhook URL for me. My client ID is ${clientId} and the URL should be: ${webhookUrl}`;
+        textarea.focus();
+        
+        // Auto-submit after brief delay
+        setTimeout(() => {
+          const form = textarea.closest('form');
+          if (form) {
+            form.requestSubmit();
           }
-        })
-      }).catch(err => console.error('Failed to send webhook message:', err));
+        }, 500);
+      }
     }
   };
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
-      <C1Chat apiUrl="/api/chat" theme={{ mode: "dark" }} />
+      <C1Chat 
+        apiUrl="/api/chat" 
+        theme={{ mode: "dark" }}
+      />
       
       {showAgentCard && (
         <div style={{
@@ -104,15 +89,16 @@ export default function Home() {
           position: 'fixed',
           bottom: '20px',
           right: '20px',
-          background: '#1f2937',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
-          padding: '12px 20px',
-          borderRadius: '8px',
+          padding: '16px 24px',
+          borderRadius: '12px',
           fontSize: '14px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+          fontWeight: '500',
+          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)',
           zIndex: 50
         }}>
-          ⏳ Waiting for webhook connection...
+          ⏳ Listening for webhook events...
         </div>
       )}
     </div>

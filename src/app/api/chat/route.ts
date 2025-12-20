@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { transformStream } from "@crayonai/stream";
 import { DBMessage, getMessageStore } from "./messageStore";
+import { getDashboardGenerationTools } from "@/app/lib/dashboard-tools";
+import { getSystemPrompt } from "@/app/config/system-prompts";
 
 export async function POST(req: NextRequest) {
-  const { prompt, threadId, responseId, webhookData, webhookSuccess } = (await req.json()) as {
+  const { prompt, threadId, responseId } = (await req.json()) as {
     prompt: DBMessage;
     threadId: string;
     responseId: string;
-    webhookData?: { clientId: string; webhookUrl: string };
-    webhookSuccess?: { previewUrl: string; templateName: string };
   };
 
   const client = new OpenAI({
@@ -19,101 +19,185 @@ export async function POST(req: NextRequest) {
   
   const messageStore = getMessageStore(threadId);
 
-  // Save user message
-  await messageStore.addMessage(prompt);
+  // Check if user is requesting webhook setup
+  if (typeof prompt.content === 'string' && 
+      (prompt.content.toLowerCase().includes('webhook') || 
+       prompt.content.toLowerCase().includes('client id'))) {
+    
+    // Extract webhook URL and client ID if present
+    const urlMatch = prompt.content.match(/https:\/\/getflowetic\.com\/api\/webhooks\/([a-zA-Z0-9_-]+)/);
+    
+    if (urlMatch) {
+      const webhookUrl = urlMatch[0];
+      const clientId = urlMatch[1];
+      
+      const responseMessage = `I've created your webhook URL:
 
-  // Handle webhook setup
-  if (webhookData?.webhookUrl) {
-    const responseMessage = `I've created a webhook URL for you:
-
-**${webhookData.webhookUrl}**
+**${webhookUrl}**
 
 📋 **Setup Instructions:**
 
-1. Copy the URL above
-2. Add it to your platform:
-   - **Vapi:** Dashboard → Server URL → Paste webhook URL
-   - **Retell:** Settings → Webhook URL → Paste URL
-   - **n8n:** Webhook node → Production URL → Deploy
-   - **Make:** Webhooks → Custom Webhook → Paste URL
+1. **Copy the URL above**
+2. **Add it to your platform:**
+   - Vapi: Dashboard → Server URL → Paste URL
+   - Retell: Settings → Webhook URL → Paste URL
+   - n8n: Webhook node → Production URL → Deploy
+   - Make: Webhooks → Custom Webhook → Paste URL
 
-3. Send a test event from your platform
+3. **Send a test event**
 
-I'm now listening for webhook data. Once you send a test event, I'll automatically detect your data structure and generate a dashboard preview.
+I'm now listening for webhook data. Once you send a test event, I'll automatically:
+- Detect your data structure
+- Match it to the best dashboard template
+- Generate a preview for you
 
 ⏳ **Status:** Waiting for first webhook event...`;
 
-    await messageStore.addMessage({
-      role: "assistant",
-      content: responseMessage,
-      id: responseId,
-    });
+      await messageStore.addMessage(prompt);
+      await messageStore.addMessage({
+        role: "assistant",
+        content: responseMessage,
+        id: responseId,
+      });
 
-    const stream = new ReadableStream({
-      start(controller) {
-        const encoder = new TextEncoder();
-        controller.enqueue(encoder.encode(responseMessage));
-        controller.close();
-      }
-    });
+      const stream = new ReadableStream({
+        start(controller) {
+          const encoder = new TextEncoder();
+          controller.enqueue(encoder.encode(responseMessage));
+          controller.close();
+        }
+      });
 
-    return new NextResponse(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-      },
-    });
+      return new NextResponse(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+        },
+      });
+    }
   }
 
-  // Handle webhook success
-  if (webhookSuccess) {
-    const successMessage = `🎉 **Webhook Connected Successfully!**
+  // Initialize dashboard generation tools
+  const tools = getDashboardGenerationTools(async (state) => {
+    console.log('[Tool Execution]', state);
+  });
 
-Your dashboard has been generated and is ready!
+  // Get conversation history
+  const conversationHistory = await messageStore.getOpenAICompatibleMessageList();
 
-**📊 Preview URL:** ${webhookSuccess.previewUrl}
-**🎨 Template Used:** ${webhookSuccess.templateName || 'Auto-detected'}
-
-You can:
-- Click the preview link above to see your dashboard
-- Ask me to customize specific charts or metrics
-- Request changes to colors, layouts, or data displays
-
-What would you like to do next?`;
-
-    await messageStore.addMessage({
-      role: "assistant",
-      content: successMessage,
-      id: responseId,
-    });
-
-    const stream = new ReadableStream({
-      start(controller) {
-        const encoder = new TextEncoder();
-        controller.enqueue(encoder.encode(successMessage));
-        controller.close();
-      }
-    });
-
-    return new NextResponse(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-      },
-    });
-  }
-
-  // Normal AI chat - load history
+  // Normal AI chat with custom system prompt and tools
   const llmStream = await client.chat.completions.create({
     model: "c1/openai/gpt-5/v-20251130",
-    messages: await messageStore.getOpenAICompatibleMessageList(),
+    messages: [
+      {
+        role: "system",
+        content: getSystemPrompt()
+      },
+      ...conversationHistory
+    ],
+    tools: tools.map(tool => ({
+      type: "function" as const,
+      function: {
+        name: tool.function.name,
+        description: tool.function.description,
+        parameters: tool.function.parameters,
+      }
+    })),
+    tool_choice: "auto",
     stream: true,
   });
 
+  // Handle tool calls from AI
+  let toolResults: any[] = [];
+  
+  for await (const chunk of llmStream) {
+    const toolCalls = chunk.choices[0]?.delta?.tool_calls;
+    
+    if (toolCalls) {
+      for (const toolCall of toolCalls) {
+        if (toolCall.function?.name && toolCall.function?.arguments) {
+          const toolName = toolCall.function.name;
+          const tool = tools.find(t => t.function.name === toolName);
+          
+          if (tool) {
+            try {
+              const args = JSON.parse(toolCall.function.arguments);
+              const result = await tool.function.execute(args);
+              toolResults.push({ tool: toolName, result });
+              console.log(`[Tool Success] ${toolName}:`, result);
+            } catch (error) {
+              console.error(`[Tool Error] ${toolName}:`, error);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // If tools were executed, make another LLM call with results
+  if (toolResults.length > 0) {
+    const finalLlmStream = await client.chat.completions.create({
+      model: "c1/openai/gpt-5/v-20251130",
+      messages: [
+        {
+          role: "system",
+          content: getSystemPrompt()
+        },
+        ...conversationHistory,
+        {
+          role: "assistant",
+          content: `I've analyzed the data using my tools. Here are the results: ${JSON.stringify(toolResults)}`
+        }
+      ],
+      stream: true,
+    });
+
+    const finalResponseStream = transformStream(
+      finalLlmStream,
+      (chunk) => {
+        return chunk.choices?.[0]?.delta?.content ?? "";
+      },
+      {
+        onEnd: async ({ accumulated }) => {
+          const message = accumulated.filter((message) => message).join("");
+          await messageStore.addMessage({
+            role: "assistant",
+            content: message,
+            id: responseId,
+          });
+        },
+      }
+    ) as ReadableStream<string>;
+
+    return new NextResponse(finalResponseStream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
+    });
+  }
+
+  // Save user message before processing
+  await messageStore.addMessage(prompt);
+
+  // Re-create stream for normal response (since we consumed it)
+  const normalStream = await client.chat.completions.create({
+    model: "c1/openai/gpt-5/v-20251130",
+    messages: [
+      {
+        role: "system",
+        content: getSystemPrompt()
+      },
+      ...conversationHistory
+    ],
+    stream: true,
+  });
+
+  // Continue with normal response stream
   const responseStream = transformStream(
-    llmStream,
+    normalStream,
     (chunk) => {
       return chunk.choices?.[0]?.delta?.content ?? "";
     },
