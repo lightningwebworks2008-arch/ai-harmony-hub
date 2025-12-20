@@ -10,9 +10,9 @@ const webhookStore = new Map<string, WebhookEvent[]>();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { clientId: string } }
+  context: { params: Promise<{ clientId: string }> }
 ) {
-  const clientId = params.clientId;
+  const { clientId } = await context.params;
   const events = webhookStore.get(clientId) || [];
   
   return NextResponse.json({

@@ -15,10 +15,10 @@ const webhookStore = new Map<string, WebhookEvent[]>();
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { clientId: string } }
+  context: { params: Promise<{ clientId: string }> }
 ) {
+  const { clientId } = await context.params;
   try {
-    const clientId = params.clientId;
     const webhookData: unknown = await request.json();
 
     console.log(`[Webhook] Received for client ${clientId}:`, webhookData);
@@ -142,9 +142,9 @@ export async function POST(
 // Allow GET to check webhook status
 export async function GET(
   request: NextRequest,
-  { params }: { params: { clientId: string } }
+  context: { params: Promise<{ clientId: string }> }
 ) {
-  const clientId = params.clientId;
+  const { clientId } = await context.params;
   const events = webhookStore.get(clientId) || [];
   
   return NextResponse.json({
