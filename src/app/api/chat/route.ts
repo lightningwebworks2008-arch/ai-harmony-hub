@@ -53,12 +53,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Collect messages returned by runTools for persistence
-  const messagesToSave: Array<{
-    role: string;
-    content: string;
-    id?: string;
-    tool_calls?: unknown[];
-  }> = [];
+  const messagesToSave: any[] = [];
 
   runToolsResponse.on("content", (chunk) => {
     c1Response.writeContent(chunk);
@@ -79,7 +74,8 @@ export async function POST(req: NextRequest) {
     // Persist assistant + tool messages to Supabase
     for (const msg of messagesToSave) {
       await messageStore.addMessage({
-        ...msg,
+        role: msg.role,
+        content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
         id: msg.id || crypto.randomUUID(),
       });
     }
