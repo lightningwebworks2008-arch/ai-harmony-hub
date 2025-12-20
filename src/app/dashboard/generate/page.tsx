@@ -1,12 +1,13 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DashboardGenerationForm } from '@/app/components/DashboardGenerationForm';
 
-export default function GenerateDashboardPage() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const agent = searchParams.get('agent');
-  
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
@@ -23,5 +24,17 @@ export default function GenerateDashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GenerateDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
