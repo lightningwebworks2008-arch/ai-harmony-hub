@@ -6,10 +6,9 @@ import { getSystemPrompt } from "@/app/config/system-prompts";
 import { DBMessage, getMessageStore } from "./messageStore";
 
 export async function POST(req: NextRequest) {
-  const { prompt, threadId, responseId } = (await req.json()) as {
+  const { prompt, threadId } = (await req.json()) as {
     prompt: DBMessage;
     threadId: string;
-    responseId: string;
   };
 
   const client = new OpenAI({
@@ -54,7 +53,12 @@ export async function POST(req: NextRequest) {
   });
 
   // Collect messages returned by runTools for persistence
-  const messagesToSave: any[] = [];
+  const messagesToSave: Array<{
+    role: string;
+    content: string;
+    id?: string;
+    tool_calls?: unknown[];
+  }> = [];
 
   runToolsResponse.on("content", (chunk) => {
     c1Response.writeContent(chunk);
