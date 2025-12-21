@@ -1,0 +1,16 @@
+
+> template-c1@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.2.8 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://10.2.27.139:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 852ms
+ ○ Compiling /api/v1/connect-platform ...
+ ✓ Compiled /api/v1/connect-platform in 1097ms
+[Connect Platform] Testing vapi connection for client test-client-123
+[Connect Platform] Connection failed: Vapi API error: 401 Unauthorized
+ POST /api/v1/connect-platform 400 in 1660ms
