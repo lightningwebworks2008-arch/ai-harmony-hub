@@ -249,7 +249,7 @@ export async function POST(
  * Helper: Log webhook events to webhook_logs table
  */
 async function logWebhookEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Use any to avoid type conflicts between different Supabase client instances
   clientId: string,
   eventId: string | undefined,
   status: string,
