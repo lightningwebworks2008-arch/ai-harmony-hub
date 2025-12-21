@@ -127,7 +127,7 @@ ${webhookSecret}
 
    Signing Format:
    ┌─────────────────────────────────────────────────────────────┐
-   │ signedContent = \`${eventId}.${timestamp}.${requestBody}\`   │
+   │ signedContent = "\${eventId}.\${timestamp}.\${requestBody}"   │
    │ signature = HMAC-SHA256(secret, signedContent)              │
    │ encode signature as Base64                                  │
    │ send as: "v1,<base64-signature>"                            │
@@ -143,7 +143,7 @@ const eventId = 'evt_' + Date.now();
 const timestamp = Math.floor(Date.now() / 1000);
 const body = JSON.stringify({ your: 'data' });
 
-const signedContent = \`${eventId}.${timestamp}.${body}\`;
+const signedContent = "\${eventId}.\${timestamp}.\${body}";
 const secretBytes = Buffer.from('${webhookSecret.slice(7)}', 'base64');
 const signature = crypto
   .createHmac('sha256', secretBytes)
