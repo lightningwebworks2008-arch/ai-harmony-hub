@@ -7,14 +7,24 @@ import { DashboardSpecification } from '@/app/lib/dashboard-tools/types';
 interface DashboardRendererProps {
   spec: DashboardSpecification;
   deviceView?: 'mobile' | 'tablet' | 'desktop';
+  orientation?: 'portrait' | 'landscape';
 }
 
-export function DashboardRenderer({ spec, deviceView = 'desktop' }: DashboardRendererProps) {
-  const containerClass = deviceView === 'mobile' 
-    ? 'max-w-[390px] mx-auto'
-    : deviceView === 'tablet'
-    ? 'max-w-[768px] mx-auto'
-    : 'w-full';
+export function DashboardRenderer({ spec, deviceView = 'desktop', orientation = 'portrait' }: DashboardRendererProps) {
+  let containerClass;
+  if (orientation === 'landscape') {
+    containerClass = deviceView === 'mobile'
+      ? 'max-w-[640px] mx-auto'
+      : deviceView === 'tablet'
+      ? 'max-w-[1024px] mx-auto'
+      : 'w-full';
+  } else {
+    containerClass = deviceView === 'mobile'
+      ? 'max-w-[390px] mx-auto'
+      : deviceView === 'tablet'
+      ? 'max-w-[768px] mx-auto'
+      : 'w-full';
+  }
 
   return (
     <div className={`${containerClass} p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen`}>

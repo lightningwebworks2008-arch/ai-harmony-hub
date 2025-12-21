@@ -24,8 +24,8 @@ export default function Home() {
           setWebhookStatus('connected');
           clearInterval(pollInterval);
           
-          // Notify user via alert (since we can't inject into C1Chat directly)
-          alert(`✅ Webhook Connected!\n\nDashboard ready: ${data.previewUrl}\n\nTemplate: ${data.templateName || 'Auto-detected'}`);
+          // Automatically open the preview in a new tab
+          window.open(data.previewUrl, "_blank");
         }
       } catch (error) {
         console.error('Polling error:', error);
