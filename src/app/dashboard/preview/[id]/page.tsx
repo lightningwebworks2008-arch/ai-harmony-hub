@@ -8,6 +8,8 @@ import { DashboardSpecification } from '@/app/lib/dashboard-tools/types';
 export default function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const [spec, setSpec] = useState<DashboardSpecification | null>(null);
   const [deviceView, setDeviceView] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,8 +48,8 @@ export default function PreviewPage({ params }: { params: Promise<{ id: string }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10">
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
+      <div className={`border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10 ${isFullscreen ? 'hidden' : ''}`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -60,36 +62,41 @@ export default function PreviewPage({ params }: { params: Promise<{ id: string }
             </div>
             
             <div className="flex items-center gap-4">
-              <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
-                <button
-                  onClick={() => setDeviceView('mobile')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    deviceView === 'mobile'
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                <label className="px-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Device:
+                </label>
+                <select
+                  value={deviceView === 'desktop' ? 'Current' : deviceView}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'Current') {
+                      setDeviceView('desktop');
+                    } else {
+                      setDeviceView(value as 'mobile' | 'tablet');
+                    }
+                  }}
+                  className="px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
-                  📱 Mobile
+                  <option value="Current">Current</option>
+                  <option value="mobile">Mobile</option>
+                  <option value="tablet">Tablet</option>
+                </select>
+                
+                <button
+                  onClick={() => setOrientation(orientation === 'portrait' ? 'landscape' : 'portrait')}
+                  className="px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  title="Toggle orientation"
+                >
+                  🔄
                 </button>
+                
                 <button
-                  onClick={() => setDeviceView('tablet')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    deviceView === 'tablet'
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  title="Toggle fullscreen"
                 >
-                  📱 Tablet
-                </button>
-                <button
-                  onClick={() => setDeviceView('desktop')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    deviceView === 'desktop'
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  🖥️ Desktop
+                  ⛶
                 </button>
               </div>
 
@@ -106,7 +113,7 @@ export default function PreviewPage({ params }: { params: Promise<{ id: string }
         </div>
       </div>
 
-      <DashboardRenderer spec={spec} deviceView={deviceView} />
+      <DashboardRenderer spec={spec} deviceView={deviceView} orientation={orientation} />
     </div>
   );
 }
