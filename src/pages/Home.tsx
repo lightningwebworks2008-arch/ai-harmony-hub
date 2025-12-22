@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { AgentSelectionCard } from '@/components/AgentSelectionCard';
 import "@crayonai/react-ui/styles/index.css";
