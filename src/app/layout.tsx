@@ -1,13 +1,7 @@
-import type { Metadata } from "next";
+import { ReactNode } from "react";
 import "../index.css";
 
-export const metadata: Metadata = {
-  title: "C1 Chat | Generative UI",
-  description: "Generative UI App powered by Thesys C1.",
-  alternates: { canonical: "/" },
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="dark">
       <body>{children}</body>
