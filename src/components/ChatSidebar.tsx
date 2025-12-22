@@ -13,27 +13,30 @@ export function ChatSidebar({ isCollapsed, onToggle, onNewChat }: ChatSidebarPro
 
   if (isCollapsed) {
     return (
-      <div className="h-[calc(100%-1.5rem)] w-14 m-3 bg-sidebar border border-border rounded-xl flex flex-col items-center py-4">
-        <button
-          onClick={onToggle}
-          className="p-2 border border-border rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
-          aria-label="Expand sidebar"
-        >
-          <PanelLeft className="h-5 w-5" />
-        </button>
-        <button
-          onClick={onNewChat}
-          className="mt-4 p-2 border border-border rounded-lg hover:bg-sidebar-accent transition-colors"
-          aria-label="New chat"
-        >
-          <img src={sidebarIcon} alt="Menu" className="h-5 w-5" />
-        </button>
+      <div className="h-full py-3 pl-3">
+        <div className="h-full w-14 bg-sidebar border border-border rounded-xl flex flex-col items-center py-4">
+          <button
+            onClick={onToggle}
+            className="p-2 border border-border rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+            aria-label="Expand sidebar"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={onNewChat}
+            className="mt-4 p-2 border border-border rounded-lg hover:bg-sidebar-accent transition-colors"
+            aria-label="New chat"
+          >
+            <img src={sidebarIcon} alt="Menu" className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100%-1.5rem)] w-64 m-3 bg-sidebar border border-border rounded-xl flex flex-col">
+    <div className="h-full py-3 pl-3">
+      <div className="h-full w-64 bg-sidebar border border-border rounded-xl flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">
         <button className="p-2 border border-border rounded-lg hover:bg-sidebar-accent transition-colors">
@@ -74,7 +77,8 @@ export function ChatSidebar({ isCollapsed, onToggle, onNewChat }: ChatSidebarPro
               </button>
             ))}
           </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
