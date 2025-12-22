@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, PanelLeftClose, PanelLeft, MessageSquare } from 'lucide-react';
+import sidebarIcon from '@/assets/sidebar-icon.ico';
 
 interface ChatSidebarProps {
   isCollapsed: boolean;
@@ -12,33 +13,36 @@ export function ChatSidebar({ isCollapsed, onToggle, onNewChat }: ChatSidebarPro
 
   if (isCollapsed) {
     return (
-      <div className="h-full w-14 bg-sidebar border-r border-border flex flex-col items-center py-4">
+      <div className="h-[calc(100%-1.5rem)] w-14 m-3 bg-sidebar border border-border rounded-xl flex flex-col items-center py-4">
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+          className="p-2 border border-border rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
           aria-label="Expand sidebar"
         >
           <PanelLeft className="h-5 w-5" />
         </button>
         <button
           onClick={onNewChat}
-          className="mt-4 p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+          className="mt-4 p-2 border border-border rounded-lg hover:bg-sidebar-accent transition-colors"
           aria-label="New chat"
         >
-          <Plus className="h-5 w-5" />
+          <img src={sidebarIcon} alt="Menu" className="h-5 w-5" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-64 bg-sidebar border-r border-border flex flex-col">
+    <div className="h-[calc(100%-1.5rem)] w-64 m-3 bg-sidebar border border-border rounded-xl flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h1 className="text-lg font-semibold text-sidebar-foreground">C1 Chat</h1>
+      <div className="flex items-center gap-3 p-4 border-b border-border">
+        <button className="p-2 border border-border rounded-lg hover:bg-sidebar-accent transition-colors">
+          <img src={sidebarIcon} alt="Menu" className="h-5 w-5" />
+        </button>
+        <h1 className="text-lg font-semibold text-sidebar-foreground flex-1">C1 Chat</h1>
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+          className="p-2 border border-border rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
           aria-label="Collapse sidebar"
         >
           <PanelLeftClose className="h-5 w-5" />
@@ -58,11 +62,7 @@ export function ChatSidebar({ isCollapsed, onToggle, onNewChat }: ChatSidebarPro
 
       {/* Chat History */}
       <div className="flex-1 overflow-y-auto px-3 py-2">
-        {chatHistory.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No chat history yet
-          </p>
-        ) : (
+        {chatHistory.length > 0 && (
           <div className="space-y-1">
             {chatHistory.map((chat) => (
               <button
