@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "../index.css";
 
 export const metadata: Metadata = {
-  title: "Dashboard Preview | Getflowetic",
-  description: "Preview and review an auto-generated dashboard from your webhook data.",
+  title: "C1 Chat | Generative UI",
+  description: "Generative UI App powered by Thesys C1.",
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
