@@ -24,24 +24,24 @@ export default function Home() {
   };
 
   return (
-    <ChatLayout showChatInput={true} onSendMessage={handleSendMessage}>
+    <ChatLayout showChatInput={!showAgentCard} onSendMessage={handleSendMessage}>
       <div className="flex items-center justify-center min-h-full p-8">
         {showAgentCard ? (
           <AgentSelectionCard onSelectAgent={handleSelectAgent} />
         ) : (
           <div className="text-center">
-            <h2 className="text-xl font-medium text-[#888] mb-4">
+            <h2 className="text-xl font-medium text-muted-foreground mb-4">
               Agent Selected
             </h2>
-            <p className="text-sm text-[#666]">
-              Chat interface coming soon
+            <p className="text-sm text-muted-foreground">
+              Chat interface coming soon - requires Edge Function setup
             </p>
           </div>
         )}
       </div>
       
       {webhookStatus === 'waiting' && (
-        <div className="fixed bottom-20 right-5 bg-[#2a2a2a] text-[#e5e5e5] px-6 py-4 rounded-xl text-sm font-medium shadow-lg z-50 border border-[#333]">
+        <div className="fixed bottom-5 right-5 bg-primary text-primary-foreground px-6 py-4 rounded-xl text-sm font-medium shadow-lg z-50">
           ⏳ Listening for webhook events...
         </div>
       )}

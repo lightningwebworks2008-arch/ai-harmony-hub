@@ -13,6 +13,7 @@ export function ChatLayout({ children, showChatInput = true, onSendMessage }: Ch
 
   const handleNewChat = () => {
     console.log('New chat started');
+    // TODO: Implement new chat logic
   };
 
   const handleSendMessage = (message: string) => {
@@ -21,7 +22,7 @@ export function ChatLayout({ children, showChatInput = true, onSendMessage }: Ch
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#0d0d0d]">
+    <div className="flex h-screen w-full bg-background">
       {/* Sidebar */}
       <ChatSidebar
         isCollapsed={sidebarCollapsed}

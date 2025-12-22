@@ -1,4 +1,5 @@
-import { Plus, Copy } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, PanelLeftClose, PanelLeft, MessageSquare } from 'lucide-react';
 
 interface ChatSidebarProps {
   isCollapsed: boolean;
@@ -7,50 +8,73 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({ isCollapsed, onToggle, onNewChat }: ChatSidebarProps) {
+  const [chatHistory] = useState<{ id: string; title: string }[]>([]);
+
   if (isCollapsed) {
     return (
-      <div className="h-full w-14 bg-[#1a1a1a] flex flex-col items-center py-3 gap-3">
+      <div className="h-full w-14 bg-sidebar border-r border-border flex flex-col items-center py-4">
         <button
           onClick={onToggle}
-          className="p-2 rounded hover:bg-[#2a2a2a] text-[#e5e5e5] transition-colors"
+          className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
           aria-label="Expand sidebar"
         >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
+          <PanelLeft className="h-5 w-5" />
+        </button>
+        <button
+          onClick={onNewChat}
+          className="mt-4 p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+          aria-label="New chat"
+        >
+          <Plus className="h-5 w-5" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-56 bg-[#1a1a1a] flex flex-col">
+    <div className="h-full w-64 bg-sidebar border-r border-border flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-3">
-        <div className="flex items-center gap-2">
-          <svg className="h-4 w-4 text-[#e5e5e5]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-          <span className="text-sm font-medium text-[#e5e5e5]">C1 Chat</span>
-        </div>
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <h1 className="text-lg font-semibold text-sidebar-foreground">C1 Chat</h1>
         <button
           onClick={onToggle}
-          className="p-1.5 rounded hover:bg-[#2a2a2a] text-[#888] transition-colors"
+          className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
           aria-label="Collapse sidebar"
         >
-          <Copy className="h-4 w-4" />
+          <PanelLeftClose className="h-5 w-5" />
         </button>
       </div>
 
       {/* New Chat Button */}
-      <div className="px-3 pb-3">
+      <div className="p-3">
         <button
           onClick={onNewChat}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-[#333] bg-transparent text-[#e5e5e5] hover:bg-[#2a2a2a] transition-colors text-sm"
+          className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
         >
-          <span>New Chat</span>
           <Plus className="h-4 w-4" />
+          New Chat
         </button>
+      </div>
+
+      {/* Chat History */}
+      <div className="flex-1 overflow-y-auto px-3 py-2">
+        {chatHistory.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No chat history yet
+          </p>
+        ) : (
+          <div className="space-y-1">
+            {chatHistory.map((chat) => (
+              <button
+                key={chat.id}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground text-sm text-left transition-colors"
+              >
+                <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{chat.title}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
