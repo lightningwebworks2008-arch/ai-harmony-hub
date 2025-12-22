@@ -1,8 +1,31 @@
-
-'use client';
-
 import React from 'react';
-import { DashboardSpecification } from '@/app/lib/dashboard-tools/types';
+
+interface DashboardSpecification {
+  templateId: string;
+  templateName: string;
+  structure: {
+    sections: Array<{
+      type: string;
+      title?: string;
+      widgets: Array<{
+        type?: string;
+        label?: string;
+        title?: string;
+        icon?: string;
+        dataPath?: string;
+        height?: Record<string, string>;
+      }>;
+      columns?: Array<{ key: string; label: string }>;
+      responsive?: Record<string, string>;
+    }>;
+  };
+  fieldMappings: Record<string, string>;
+  theme: {
+    primary: string;
+    secondary?: string;
+    background?: string;
+  };
+}
 
 interface DashboardRendererProps {
   spec: DashboardSpecification;
@@ -27,12 +50,12 @@ export function DashboardRenderer({ spec, deviceView = 'desktop', orientation = 
   }
 
   return (
-    <div className={`${containerClass} p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen`}>
+    <div className={`${containerClass} p-6 space-y-6 bg-muted min-h-screen`}>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-foreground">
           {spec.templateName}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-muted-foreground mt-2">
           Template: {spec.templateId}
         </p>
       </div>
@@ -44,17 +67,17 @@ export function DashboardRenderer({ spec, deviceView = 'desktop', orientation = 
               {section.widgets.map((widget, widgetIdx) => (
                 <div
                   key={widgetIdx}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+                  className="bg-card rounded-lg shadow p-6"
                   style={{ borderTop: `3px solid ${spec.theme.primary}` }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-sm text-muted-foreground">
                       {widget.label}
                     </span>
                     <span className="text-2xl">{widget.icon === 'phone' ? '📞' : widget.icon === 'check-circle' ? '✅' : widget.icon === 'clock' ? '⏱️' : '💰'}</span>
                   </div>
                   <div className="mt-4">
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    <div className="text-3xl font-bold text-foreground">
                       {getSampleValue(widget.dataPath || '')}
                     </div>
                   </div>
@@ -68,16 +91,16 @@ export function DashboardRenderer({ spec, deviceView = 'desktop', orientation = 
               {section.widgets.map((widget, widgetIdx) => (
                 <div
                   key={widgetIdx}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+                  className="bg-card rounded-lg shadow p-6"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">
                     {widget.title}
                   </h3>
                   <div
-                    className="flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded"
+                    className="flex items-center justify-center bg-muted rounded"
                     style={{ height: widget.height?.[deviceView] || '300px' }}
                   >
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-muted-foreground">
                       {widget.type === 'line-chart' ? '📈' : widget.type === 'pie-chart' ? '📊' : '📉'} Chart Preview
                     </span>
                   </div>
@@ -87,33 +110,33 @@ export function DashboardRenderer({ spec, deviceView = 'desktop', orientation = 
           )}
 
           {section.type === 'data-table' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <div className="bg-card rounded-lg shadow overflow-hidden">
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <h3 className="text-lg font-semibold text-foreground mb-4">
                   {section.title}
                 </h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-muted">
                     <tr>
                       {section.columns?.map((col, colIdx) => (
                         <th
                           key={colIdx}
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                          className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                         >
                           {col.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-card divide-y divide-border">
                     {[1, 2, 3, 4, 5].map((row) => (
                       <tr key={row}>
                         {section.columns?.map((col, colIdx) => (
                           <td
                             key={colIdx}
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white"
+                            className="px-6 py-4 whitespace-nowrap text-sm text-foreground"
                           >
                             Sample {col.key}
                           </td>
@@ -145,3 +168,5 @@ function getSampleValue(dataPath: string): string {
 
   return sampleValues[dataPath] || '—';
 }
+
+export type { DashboardSpecification };
