@@ -20,7 +20,7 @@ export default function Home() {
   };
 
   return (
-    <ChatLayout showChatInput={!showAgentCard} onSendMessage={handleSendMessage}>
+    <ChatLayout showChatInput={true} onSendMessage={handleSendMessage}>
       <div className="flex items-center justify-center min-h-full p-8">
         {showAgentCard ? (
           <AgentSelectionCard onSelectAgent={handleSelectAgent} />
