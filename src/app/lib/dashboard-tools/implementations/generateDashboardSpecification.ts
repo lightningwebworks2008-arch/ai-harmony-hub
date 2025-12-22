@@ -1,8 +1,19 @@
 import { z } from "zod";
 import { generateDashboardSpecificationSchema } from "../toolDefs";
-import { matchBestTemplate, TemplateMeta } from "../templates/registry";
+import { matchBestTemplate } from "../templates/registry";
+import { DashboardSpecification } from '../types/WidgetConfig';
 
 type Args = z.infer<typeof generateDashboardSpecificationSchema>;
+
+// Field detection patterns (from Appsmith research)
+const FIELD_PATTERNS = {
+  email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+  phone: /^\+?[\d\s\-()]+$/,
+  url: /^https?:\/\/.+/,
+  dateKeywords: ['date', 'time', 'created', 'updated', 'timestamp', 'at', 'when'],
+  statusKeywords: ['status', 'state', 'outcome', 'result', 'disposition'],
+  idKeywords: ['id', 'uuid', 'key', 'identifier']
+};
 
 export async function generateDashboardSpecification(args: Args) {
   try {
@@ -12,21 +23,29 @@ export async function generateDashboardSpecification(args: Args) {
       throw new Error(`Template ${bestTemplate.id} is missing structure definition`);
     }
     
-    const fieldMappings = mapFieldsToTemplate(args.schema, bestTemplate);
+    // Map individual fields using the improved function
+    const fieldMappings: Record<string, string> = {};
+    for (const requiredField of bestTemplate.fieldMapping?.required || []) {
+      const mappedField = mapFieldsToTemplate(args.schema, requiredField);
+      if (mappedField) {
+        fieldMappings[requiredField] = mappedField;
+      }
+    }
     
-    const spec = {
-      templateId: bestTemplate.id,
-      templateName: bestTemplate.name,
-      structure: bestTemplate.structure,
-      fieldMappings: fieldMappings,
-      theme: args.customizations?.colors || getDefaultTheme()
-    };
+    for (const optionalField of bestTemplate.fieldMapping?.optional || []) {
+      const mappedField = mapFieldsToTemplate(args.schema, optionalField);
+      if (mappedField) {
+        fieldMappings[optionalField] = mappedField;
+      }
+    }
     
-    return {
-      success: true,
-      specification: spec,
-      matchedTemplate: bestTemplate.name,
-      confidence: 0.90
+    // Change to return DashboardSpecification directly
+    return { 
+      specification: {
+        theme: bestTemplate.structure.theme,
+        widgets: bestTemplate.structure.widgets
+      } as DashboardSpecification,
+      matchedTemplate: bestTemplate.name 
     };
   } catch (error) {
     return {
@@ -38,37 +57,43 @@ export async function generateDashboardSpecification(args: Args) {
 }
 
 function mapFieldsToTemplate(
-  schema: { fields: Array<{ name: string; type: string }> },
-  template: TemplateMeta
-): Record<string, string> {
-  const mappings: Record<string, string> = {};
+  schema: { fields: Array<{ name: string; type: string }> }, 
+  requiredField: string
+): string | null {
+  // 1. Try exact match first
+  let match = schema.fields.find(f => f.name === requiredField);
+  if (match) return match.name;
   
-  for (const requiredField of template.fieldMapping?.required || []) {
-    const match = schema.fields.find(f => 
-      f.name.toLowerCase().includes(requiredField.toLowerCase()) ||
-      requiredField.toLowerCase().includes(f.name.toLowerCase())
+  // 2. Try case-insensitive exact match
+  match = schema.fields.find(f => 
+    f.name.toLowerCase() === requiredField.toLowerCase()
+  );
+  if (match) return match.name;
+  
+  // 3. Try fuzzy match with common variations
+  const requiredLower = requiredField.toLowerCase();
+  match = schema.fields.find(f => {
+    const fieldLower = f.name.toLowerCase();
+    return fieldLower.includes(requiredLower) || requiredLower.includes(fieldLower);
+  });
+  if (match) return match.name;
+  
+  // 4. Try semantic matching for common field types
+  if (FIELD_PATTERNS.dateKeywords.some(kw => requiredLower.includes(kw))) {
+    match = schema.fields.find(f => 
+      FIELD_PATTERNS.dateKeywords.some(kw => f.name.toLowerCase().includes(kw))
     );
-    if (match) {
-      mappings[requiredField] = match.name;
-    }
+    if (match) return match.name;
   }
   
-  for (const optionalField of template.fieldMapping?.optional || []) {
-    const match = schema.fields.find(f => 
-      f.name.toLowerCase().includes(optionalField.toLowerCase()) ||
-      optionalField.toLowerCase().includes(f.name.toLowerCase())
+  if (FIELD_PATTERNS.statusKeywords.some(kw => requiredLower.includes(kw))) {
+    match = schema.fields.find(f => 
+      FIELD_PATTERNS.statusKeywords.some(kw => f.name.toLowerCase().includes(kw))
     );
-    if (match) {
-      mappings[optionalField] = match.name;
-    }
+    if (match) return match.name;
   }
   
-  return mappings;
+  return null;
 }
 
-function getDefaultTheme() {
-  return {
-    primary: '#6366f1',
-    secondary: '#8b5cf6'
-  };
-}
+

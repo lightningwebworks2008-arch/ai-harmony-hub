@@ -1,4 +1,6 @@
 
+import { DashboardSpecification } from '../types/WidgetConfig';
+
 export const VAPI_APPOINTMENTS_TEMPLATE = {
   id: 'vapi-appointments',
   name: 'Voice Agent Appointments Dashboard',
@@ -18,89 +20,86 @@ export const VAPI_APPOINTMENTS_TEMPLATE = {
   },
   
   structure: {
-    sections: [
+    theme: {
+      primaryColor: '#6366f1', // Indigo
+      secondaryColor: '#8b5cf6'  // Purple
+    },
+    widgets: [
+      // Row 1: KPI Cards
       {
-        type: 'kpi-grid',
-        responsive: {
-          mobile: 'grid-cols-1',
-          tablet: 'grid-cols-2',
-          desktop: 'grid-cols-4'
-        },
-        widgets: [
-          {
-            type: 'stat-card',
-            label: 'Total Calls Today',
-            dataPath: 'metrics.totalCalls',
-            icon: 'phone',
-            format: 'number'
-          },
-          {
-            type: 'stat-card',
-            label: 'Success Rate',
-            dataPath: 'metrics.successRate',
-            icon: 'check-circle',
-            format: 'percentage'
-          },
-          {
-            type: 'stat-card',
-            label: 'Avg Call Duration',
-            dataPath: 'metrics.avgDuration',
-            icon: 'clock',
-            format: 'duration'
-          },
-          {
-            type: 'stat-card',
-            label: 'Cost Per Success',
-            dataPath: 'metrics.costPerSuccess',
-            icon: 'dollar-sign',
-            format: 'currency'
-          }
-        ]
+        id: 'total-calls',
+        type: 'stat' as const,
+        position: { x: 0, y: 0, width: 3, height: 2 },
+        label: 'Total Calls Today',
+        value: 0, // Placeholder, filled by data
+        icon: 'phone',
+        valueColor: '#6366f1'
       },
       {
-        type: 'chart-row',
-        responsive: {
-          mobile: 'grid-cols-1',
-          tablet: 'grid-cols-1',
-          desktop: 'grid-cols-2'
-        },
-        widgets: [
-          {
-            type: 'line-chart',
-            title: 'Calls Over Time',
-            dataPath: 'timeSeries.calls',
-            xAxis: 'timestamp',
-            yAxis: 'count',
-            height: { mobile: '300px', tablet: '300px', desktop: '400px' }
-          },
-          {
-            type: 'pie-chart',
-            title: 'Call Outcomes',
-            dataPath: 'distribution.outcomes',
-            height: { mobile: '300px', tablet: '300px', desktop: '400px' }
-          }
-        ]
+        id: 'success-rate',
+        type: 'stat' as const,
+        position: { x: 3, y: 0, width: 3, height: 2 },
+        label: 'Success Rate',
+        value: 0,
+        icon: 'check-circle',
+        valueColor: '#10b981'
       },
       {
-        type: 'data-table',
-        title: 'Recent Calls',
-        dataPath: 'calls',
+        id: 'avg-duration',
+        type: 'stat' as const,
+        position: { x: 6, y: 0, width: 3, height: 2 },
+        label: 'Avg Call Duration',
+        value: 0,
+        icon: 'clock',
+        valueColor: '#6366f1'
+      },
+      {
+        id: 'cost-per-success',
+        type: 'stat' as const,
+        position: { x: 9, y: 0, width: 3, height: 2 },
+        label: 'Cost Per Success',
+        value: 0,
+        icon: 'dollar-sign',
+        valueColor: '#6366f1'
+      },
+      // Row 2: Charts
+      {
+        id: 'calls-over-time',
+        type: 'chart' as const,
+        position: { x: 0, y: 2, width: 6, height: 4 },
+        chartType: 'line',
+        data: { series: [] }, // Filled by data
+        xAxisName: 'Time',
+        yAxisName: 'Calls',
+        showLegend: true
+      },
+      {
+        id: 'call-outcomes',
+        type: 'chart' as const,
+        position: { x: 6, y: 2, width: 6, height: 4 },
+        chartType: 'pie',
+        data: { series: [] }, // Filled by data
+        showLegend: true
+      },
+      // Row 3: Data Table
+      {
+        id: 'recent-calls',
+        type: 'table' as const,
+        position: { x: 0, y: 6, width: 12, height: 4 },
         columns: [
-          { key: 'timestamp', label: 'Time', format: 'datetime' },
-          { key: 'caller', label: 'Caller', format: 'text' },
-          { key: 'duration', label: 'Duration', format: 'duration' },
-          { key: 'outcome', label: 'Status', format: 'badge' },
-          { key: 'transcript', label: 'Transcript', format: 'text-truncate' }
+          { field: 'timestamp', label: 'Time', type: 'datetime' },
+          { field: 'caller', label: 'Caller', type: 'text' },
+          { field: 'duration', label: 'Duration', type: 'duration' },
+          { field: 'outcome', label: 'Status', type: 'badge' },
+          { field: 'transcript', label: 'Transcript', type: 'text' }
         ],
-        pagination: true,
-        responsive: {
-          mobile: { visibleColumns: ['timestamp', 'caller', 'outcome'] },
-          tablet: { visibleColumns: ['timestamp', 'caller', 'outcome'] },
-          desktop: { visibleColumns: 'all' }
-        }
+        rows: [], // Filled by data
+        pageSize: 10,
+        enableSearch: true,
+        enableSort: true
       }
     ]
-  },
+  } as DashboardSpecification,
   
   fieldMapping: {
     required: ['timestamp', 'duration', 'outcome'],
