@@ -31,17 +31,17 @@ export function ChatLayout({ children, showChatInput = true, onSendMessage }: Ch
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>
-
-        {/* Chat Input - Centered in remaining space */}
-        {showChatInput && (
-          <ChatInput onSend={handleSendMessage} sidebarCollapsed={sidebarCollapsed} />
-        )}
       </div>
+
+      {/* Chat Input - Fixed at bottom, centered in available space */}
+      {showChatInput && (
+        <ChatInput onSend={handleSendMessage} sidebarCollapsed={sidebarCollapsed} />
+      )}
     </div>
   );
 }
