@@ -7,8 +7,8 @@ interface DashboardSpec extends DashboardSpecification {
   createdAt: number;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = "https://ptzuijpjmqogcvigvklv.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0enVpanBqbXFvZ2N2aWd2a2x2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzODExMDQsImV4cCI6MjA4MTk1NzEwNH0.SPBb2JdSkgWF5npR_E-K0FshikeCpYk5CWL6PhQUKzs";
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -32,7 +32,7 @@ export async function getSpec(id: string): Promise<DashboardSpec | null> {
     .select('spec')
     .eq('id', id)
     .gt('expires_at', new Date().toISOString())
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
