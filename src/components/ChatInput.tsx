@@ -40,7 +40,7 @@ export function ChatInput({ onSend, disabled = false, placeholder = "Type your m
           <button
             onClick={handleSend}
             disabled={disabled || !message.trim()}
-            className="p-2 rounded-lg bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg bg-white text-black hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             aria-label="Send message"
           >
             <ArrowRight className="h-4 w-4" />
