@@ -49,7 +49,7 @@ export function ChatSidebar({ isCollapsed, onToggle, onNewChat }: ChatSidebarPro
       <div className="p-3">
         <button
           onClick={onNewChat}
-          className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-colors font-medium border border-border"
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-white text-black hover:bg-gray-100 transition-colors font-medium"
         >
           <span>New Chat</span>
           <Plus className="h-4 w-4" />
