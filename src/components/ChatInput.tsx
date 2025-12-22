@@ -27,7 +27,7 @@ export function ChatInput({ onSend, disabled = false, placeholder = "Type your m
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center bg-muted border border-border rounded-xl px-4 py-2">
+        <div className="flex items-center bg-background rounded-xl px-4 py-2" style={{ border: '1px solid #424242' }}>
           <input
             type="text"
             value={message}
