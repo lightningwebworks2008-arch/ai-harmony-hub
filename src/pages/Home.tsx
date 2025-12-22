@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AgentSelectionCard } from '@/components/AgentSelectionCard';
+import { ChatLayout } from '@/components/ChatLayout';
 import "@crayonai/react-ui/styles/index.css";
 
-// Note: C1Chat will need Edge Function backend - placeholder for now
 export default function Home() {
   const [showAgentCard, setShowAgentCard] = useState(true);
-  const [webhookClientId, setWebhookClientId] = useState<string | null>(null);
   const [webhookStatus, setWebhookStatus] = useState<'waiting' | 'connected' | null>(null);
 
   const handleSelectAgent = async (agent: string) => {
@@ -15,16 +14,18 @@ export default function Home() {
     setShowAgentCard(false);
     
     if (agent === 'webhook') {
-      const clientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      setWebhookClientId(clientId);
       setWebhookStatus('waiting');
-      // TODO: Implement webhook setup via Edge Function
     }
   };
 
+  const handleSendMessage = (message: string) => {
+    console.log('User message:', message);
+    // TODO: Implement chat functionality
+  };
+
   return (
-    <div className="relative w-full min-h-screen bg-background text-foreground">
-      <div className="flex items-center justify-center min-h-screen p-8">
+    <ChatLayout showChatInput={!showAgentCard} onSendMessage={handleSendMessage}>
+      <div className="flex items-center justify-center min-h-full p-8">
         {showAgentCard ? (
           <AgentSelectionCard onSelectAgent={handleSelectAgent} />
         ) : (
@@ -44,6 +45,6 @@ export default function Home() {
           ⏳ Listening for webhook events...
         </div>
       )}
-    </div>
+    </ChatLayout>
   );
 }
