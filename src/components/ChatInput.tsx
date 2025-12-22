@@ -31,7 +31,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
       <div className="w-full max-w-2xl px-4 pointer-events-auto">
         <div className="bg-card border border-border rounded-2xl shadow-lg p-2">
           <div className="flex items-center bg-background border border-border rounded-xl px-4 py-2">
