@@ -11,11 +11,7 @@ export default function Home() {
 
   const handleSelectAgent = async (agent: string) => {
     console.log('Selected agent:', agent);
-    setShowAgentCard(false);
-    
-    if (agent === 'webhook') {
-      setWebhookStatus('waiting');
-    }
+    // Do nothing - buttons are non-interactive for now
   };
 
   const handleSendMessage = (message: string) => {
