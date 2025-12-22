@@ -1,5 +1,6 @@
 import { VAPI_APPOINTMENTS_TEMPLATE } from './vapi-appointments';
 import { CHATBOT_ANALYTICS_TEMPLATE } from './chatbot-analytics';
+import { DashboardSpecification } from '../types/WidgetConfig';
 
 export interface TemplateMeta {
   id: string;
@@ -16,7 +17,7 @@ export interface TemplateMeta {
     hasTranscript: number;
     hasDuration: number;
   };
-  structure?: any; // eslint-disable-line @typescript-eslint/no-explicit-any -- Use 'any' to allow flexible template structures
+  structure: DashboardSpecification;
   fieldMapping?: {
     required: string[];
     optional: string[];
