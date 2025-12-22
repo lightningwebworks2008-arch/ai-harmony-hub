@@ -1,10 +1,32 @@
-
 import { createClient } from '@supabase/supabase-js';
-import { DashboardSpecification } from './types';
 
-interface DashboardSpec extends DashboardSpecification {
+interface DashboardSpec {
+  templateId: string;
+  templateName: string;
+  structure: {
+    sections: Array<{
+      type: string;
+      title?: string;
+      widgets: Array<{
+        type?: string;
+        label?: string;
+        title?: string;
+        icon?: string;
+        dataPath?: string;
+        height?: Record<string, string>;
+      }>;
+      columns?: Array<{ key: string; label: string }>;
+      responsive?: Record<string, string>;
+    }>;
+  };
+  fieldMappings: Record<string, string>;
+  theme: {
+    primary: string;
+    secondary?: string;
+    background?: string;
+  };
   sampleData?: Record<string, unknown>;
-  createdAt: number;
+  createdAt?: number;
 }
 
 const supabaseUrl = "https://ptzuijpjmqogcvigvklv.supabase.co";
@@ -63,3 +85,5 @@ export async function listSpecs(): Promise<Array<{ id: string; spec: DashboardSp
     spec: row.spec as DashboardSpec
   }));
 }
+
+export type { DashboardSpec };
