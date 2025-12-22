@@ -31,7 +31,12 @@ export function ChatInput({
   };
 
   return (
-    <div className="absolute inset-0 flex items-end justify-center pb-8 pointer-events-none">
+    <div 
+      className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-50"
+      style={{ 
+        paddingLeft: sidebarCollapsed ? '64px' : '256px'
+      }}
+    >
       <div className="w-full max-w-2xl px-4 pointer-events-auto">
         <div className="bg-card border border-border rounded-2xl shadow-lg p-2">
           <div className="flex items-center bg-background border border-border rounded-xl px-4 py-2">
