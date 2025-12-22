@@ -25,8 +25,8 @@ export function ChatInput({ onSend, disabled = false, placeholder = "Type your m
   };
 
   return (
-    <div className="border-t border-border bg-background p-4">
-      <div className="max-w-3xl mx-auto flex items-center gap-3">
+    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background">
+      <div className="max-w-2xl mx-auto flex items-center gap-3">
         <input
           type="text"
           value={message}
