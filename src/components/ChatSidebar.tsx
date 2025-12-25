@@ -39,9 +39,9 @@ export function ChatSidebar({ isCollapsed, onToggle, onNewChat }: ChatSidebarPro
       <div className="h-full w-64 bg-sidebar border border-border rounded-xl flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">
-        <button className="p-2 border border-border rounded-lg hover:bg-sidebar-accent transition-colors">
-          <img src={sidebarIcon} alt="Menu" className="h-5 w-5" />
-        </button>
+        <div className="w-9 h-9 border border-border rounded-lg overflow-hidden">
+          <img src={sidebarIcon} alt="Menu" className="w-full h-full object-cover" />
+        </div>
         <h1 className="text-lg font-semibold text-sidebar-foreground flex-1">C1 Chat</h1>
         <button
           onClick={onToggle}
